@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "519732828793",
+    "firebase_url": "https://ourem-a1323.firebaseio.com",
+    "project_id": "ourem-a1323",
+    "storage_bucket": "ourem-a1323.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:519732828793:android:61ab980a503ea090",
+        "android_client_info": {
+          "package_name": "com.SilentSilas.OuREM"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "519732828793-dhctgsdb3g07r9tmhc1lkitb4nii65v2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKAhynKvbgZgVARIrEhpA1LzkmY6fK-u0"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
