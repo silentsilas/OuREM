@@ -15,3 +15,7 @@ For help getting started with Flutter, view the online
 * Add a bunch of sounds/alarms that are known to be easy to recognize in dreams.
 * Set an alarm with one of the said sounds/alarms that only plays for a short duration.
 * Hook up to the Oura Ring Cloud API, and visualize that data.
+
+## Completed
+* Ability to add entries
+* Save entries to local storage, and retrieve them when app is opened.
