@@ -15,7 +15,7 @@ class DiaryEntryItem extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          new Text(diaryEntry.title),
+          new Text(diaryEntry.title == null ? "" : diaryEntry.title),
           new Expanded(
             child: new Row(
               mainAxisAlignment: MainAxisAlignment.end,

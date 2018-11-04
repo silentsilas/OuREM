@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/DiaryEntry.dart';
@@ -9,7 +8,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sembast/sembast.dart';
 import 'package:sembast/sembast_io.dart';
 import 'package:simple_permissions/simple_permissions.dart';
-import 'dart:io' show Platform;
+//import 'package:flutter_string_encryption/flutter_string_encryption.dart';
+//import 'dart:io' show Platform;
 
 class DiaryScreen extends StatefulWidget {
   DiaryScreen({Key key, this.title}) : super(key: key);
@@ -39,7 +39,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
   void _openAddEntryDialog(BuildContext context) async {
     DiaryEntry save = await Navigator.of(context).push(new MaterialPageRoute(
         builder: (BuildContext context) {
-          return new AddDiaryEntry();
+          return new AddDiaryEntry(title: null, entry: null, time: null, recordKey: null);
         },
         fullscreenDialog: true
     ));
@@ -48,18 +48,31 @@ class _DiaryScreenState extends State<DiaryScreen> {
     }
   }
 
-  void _addDiarySave (DiaryEntry diarySave) {
+  void _openEditEntryDialog(BuildContext context, int entryIndex, DiaryEntry originalSave) async {
+    DiaryEntry save = await Navigator.of(context).push(new MaterialPageRoute(
+      builder: (BuildContext context) {
+        return new AddDiaryEntry(title: originalSave.title, entry: originalSave.entry, time: originalSave.time, recordKey: originalSave.key);
+      },
+      fullscreenDialog: true
+    ));
+    if (save != null) {
+      _updateDiarySave(entryIndex, save);
+    }
+  }
+
+  void _addDiarySave (DiaryEntry diarySave) async {
+    Store diaryStore = diaryDb.getStore("diary");
+    var newRecord = new Record(diaryStore, {
+      'title': diarySave.title,
+      'entry': diarySave.entry,
+      'time': diarySave.time.toIso8601String()
+    });
+    Record addedRecord = await diaryDb.putRecord(newRecord);
     setState(() {
-      diarySaves.add(diarySave);
       if (diaryDb != null) {
-        Store diaryStore = diaryDb.getStore("diary");
-        var newRecord = new Record(diaryStore, {
-          'title': diarySave.title,
-          'time': diarySave.time.toIso8601String()
-        });
-        diaryDb.putRecord(newRecord);
-        print("successfully saved");
+        diarySave.key = addedRecord.key;
       }
+      diarySaves.add(diarySave);
       _listViewScrollController.animateTo(
         diarySaves.length * _itemExtent,
         duration: const Duration(microseconds: 1),
@@ -68,14 +81,26 @@ class _DiaryScreenState extends State<DiaryScreen> {
     });
   }
 
+  void _updateDiarySave (int entryIndex, DiaryEntry save) async {
+    Store diaryStore = diaryDb.getStore("diary");
+    Record record = await diaryStore.getRecord(save.key);
+    if (diaryDb != null) {
+      record.value['title'] = save.title;
+      record.value['entry'] = save.entry;
+      record.value['time'] = save.time.toIso8601String();
+      diaryDb.putRecord(record);
+    }
+
+    setState(() {
+      diarySaves[entryIndex] = save;
+    });
+  }
+
   Future<Database> _initializeDb() async {
     // File path to a file in the same directory as the current script
     final path = await DiaryScreen._localPath;
     return await databaseFactoryIo
         .openDatabase(join(path, "sample.db"));
-//    String dbPath = join(dirname(Platform.script.toFilePath()), "sample.db");
-//    DatabaseFactory dbFactory = databaseFactoryIo;
-//    return await dbFactory.openDatabase(dbPath);
   }
 
   Future<PermissionStatus> _requestFilePermission() async {
@@ -93,14 +118,13 @@ class _DiaryScreenState extends State<DiaryScreen> {
           await diaryStore.records.listen((Record diaryRecord) {
             // here we know we have a single record
             DiaryEntry diaryEntry = new DiaryEntry(
-              DateTime.parse(diaryRecord.value['time'] as String), diaryRecord.value['title'] as String
+              DateTime.parse(diaryRecord.value['time'] as String), diaryRecord.value['title'] as String, diaryRecord.value['entry'] as String, diaryRecord.key as int,
             );
             // add that to our list, and update the state
             setState(() {
               diarySaves.add(diaryEntry);
             });
           }).asFuture();
-          print('done getting records');
         });
       } else {
         // TODO: make a toast/dialogue that shows errors like this
@@ -120,11 +144,12 @@ class _DiaryScreenState extends State<DiaryScreen> {
         itemCount: diarySaves != null ? diarySaves.length : 0,
         itemBuilder: (buildContext, index) {
           return new InkWell(
-              onTap: () => null,  //() => _editEntry(diarySaves[index]),
+              onTap: () => _openEditEntryDialog(context, index, diarySaves[index]),  //() => _editEntry(diarySaves[index]),
               child: new DiaryEntryItem(diarySaves[index]));
         },
       ),
       floatingActionButton: new FloatingActionButton(
+        backgroundColor: Theme.of(context).primaryColor,
         onPressed:() => _openAddEntryDialog(context),
         tooltip: 'Add new diary entry',
         child: new Icon(Icons.add),
