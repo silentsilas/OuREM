@@ -56,7 +56,11 @@ class _DiaryScreenState extends State<DiaryScreen> {
       fullscreenDialog: true
     ));
     if (save != null) {
-      _updateDiarySave(entryIndex, save);
+      if (save.deleted) {
+        _deleteDiarySave(entryIndex, save);
+      } else {
+        _updateDiarySave(entryIndex, save);
+      }
     }
   }
 
@@ -81,10 +85,20 @@ class _DiaryScreenState extends State<DiaryScreen> {
     });
   }
 
-  void _updateDiarySave (int entryIndex, DiaryEntry save) async {
-    Store diaryStore = diaryDb.getStore("diary");
-    Record record = await diaryStore.getRecord(save.key);
+  void _deleteDiarySave (int entryIndex, DiaryEntry save) async {
     if (diaryDb != null) {
+      Store diaryStore = diaryDb.getStore("diary");
+      await diaryStore.delete(save.key);
+    }
+    setState(() {
+      diarySaves.removeAt(entryIndex);
+    });
+  }
+
+  void _updateDiarySave (int entryIndex, DiaryEntry save) async {
+    if (diaryDb != null) {
+      Store diaryStore = diaryDb.getStore("diary");
+      Record record = await diaryStore.getRecord(save.key);
       record.value['title'] = save.title;
       record.value['entry'] = save.entry;
       record.value['time'] = save.time.toIso8601String();
@@ -118,7 +132,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
           await diaryStore.records.listen((Record diaryRecord) {
             // here we know we have a single record
             DiaryEntry diaryEntry = new DiaryEntry(
-              DateTime.parse(diaryRecord.value['time'] as String), diaryRecord.value['title'] as String, diaryRecord.value['entry'] as String, diaryRecord.key as int,
+              DateTime.parse(diaryRecord.value['time'] as String), diaryRecord.value['title'] as String, diaryRecord.value['entry'] as String, diaryRecord.key as int, diaryRecord.deleted,
             );
             // add that to our list, and update the state
             setState(() {

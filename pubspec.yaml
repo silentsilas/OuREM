@@ -24,7 +24,9 @@ dependencies:
   path_provider: ^0.4.1
   sembast: ^1.9.5
   simple_permissions: ^0.1.9
-  flutter_string_encryption: ^0.2.0
+  speech_recognition:
+      git:
+        url: git://github.com/alescdb/speech_recognition.git
 
 dev_dependencies:
   flutter_test:
