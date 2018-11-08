@@ -42,31 +42,34 @@ class AddDiaryEntryState extends State<AddDiaryEntry> {
     _canDelete = widget.title == null ? false : true;
     _titleTextController = new TextEditingController(text: widget.title);
     _entryTextController = new TextEditingController(text: widget.entry);
-    _activateSpeechRecognizer();
+    _requestRecordPermission();
   }
 
   void _requestRecordPermission() async {
     PermissionStatus status = await SimplePermissions.requestPermission(Permission.RecordAudio);
     if (status == PermissionStatus.authorized) {
       print("kewl we're able to record");
-
-//      print(_speech);
       _activateSpeechRecognizer();
+    } else {
+      // TODO: Display an alert that voice rec won't work, and hide the buttons
     }
   }
 
   void _activateSpeechRecognizer() {
     print('_MyAppState.activateSpeechRecognizer... ');
-//    _speechRecognitionAvailable = true;
     _speech = new SpeechRecognition();
     _speech.setAvailabilityHandler(onSpeechAvailability);
     _speech.setCurrentLocaleHandler(onCurrentLocale);
     _speech.setRecognitionStartedHandler(onRecognitionStarted);
     _speech.setRecognitionResultHandler(onRecognitionResult);
     _speech.setRecognitionCompleteHandler(onRecognitionComplete);
-    _speech.activate().then((val) {
+    _speech.activate().then((active) {
       print("activated");
-      print(val);
+      if (active) {
+        _speechRecognitionAvailable = true;
+      } else {
+        // TODO: display error that someone weird happened with activating
+      }
     });
   }
 
@@ -163,14 +166,6 @@ class AddDiaryEntryState extends State<AddDiaryEntry> {
                         ? 'Listening...'
                         : 'Listen ($_currentLocale)',
                   ),
-                  _buildButton(
-                    onPressed: _isListening ? () => cancel() : null,
-                    label: 'Cancel',
-                  ),
-                  _buildButton(
-                    onPressed: _isListening ? () => stop() : null,
-                    label: 'Stop',
-                  ),
                 ],
               )
           )
@@ -198,10 +193,7 @@ class AddDiaryEntryState extends State<AddDiaryEntry> {
       ));
 
   void start() {
-    print (_speech);
-    _speech.listen(locale: _currentLocale).then((result) {
-      print(result);
-    });
+    _speech.listen(locale: _currentLocale);
   }
 
   void cancel() =>
@@ -219,24 +211,26 @@ class AddDiaryEntryState extends State<AddDiaryEntry> {
       setState(() => _currentLocale = locale);
 
   void onRecognitionStarted() => setState(() {
-    _originalEntry = _entry;
+    _originalEntry = _entryTextController.text;
     print("started recording");
     _isListening = true;
   });
 
-  void onRecognitionResult(String text) => setState(() {
+  void onRecognitionResult(String text) {
+    // don't bother prettifying until it's over
     _entryTextController.text = _originalEntry + text;
-//    _entry = _entryTextController.text;
-    print("onReconigitionResult:");
-    print(text);
-    transcription = text;
-  });
-
+    _entry = _entryTextController.text;
+    setState(() {
+      transcription = text;
+    });
+  }
   void onRecognitionComplete(String text) => setState(() {
+    if (text.length > 0) {
+      // make final string nice and pretty.
+      text = text[0].toUpperCase() + text.substring(1) + ". ";
+    }
     _entryTextController.text = _originalEntry + text;
-//    _entry = _entryTextController.text;
-    print(text);
-    print("on recognition complete");
+    _entry = _entryTextController.text;
     _isListening = false;
   });
 
